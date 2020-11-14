@@ -13,7 +13,8 @@ from nltk.tokenize import RegexpTokenizer
 from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.stem.snowball import SnowballStemmer
 from scipy import spatial
-from sklearn. feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from math import log10
 # nltk.download('wordnet')
@@ -29,7 +30,7 @@ class chatbot():
     smallTalk = {   
                 "how are you":["I am fine, thank you." , "Excellent!", "Never been better"], 
                 "how old are you":["10 days old", " 10 days young!", "I have only been created for 10 days"],
-                "how is the weather": ["It is raining cats and dogs!", "It is now 15'C"],
+                "how is the weather": ["It is raining cats and dogs!", "It is now 15'C", "The weather is warm and cozy"],
                 "what is your gender" :["I don't have a specific gender", "I am a BOT!"],
                 "what can you do" :["I can answer your question", "Try me!"],
                 "what is my name" :["your name is " ]
@@ -42,7 +43,7 @@ class chatbot():
         
     
     def getData(self):
-        with open('testset.csv', encoding='utf8') as csvfile:
+        with open('cw1Dataset.csv', encoding='utf8') as csvfile:
             readCSV = csv.reader(csvfile, delimiter=',')
             for row in readCSV:
                 # print(row)
@@ -71,10 +72,21 @@ class chatbot():
 
     def getSimilarity(self, list1):
         countVect = CountVectorizer().fit_transform(list1)
+        countVect = TfidfTransformer(use_idf=True, sublinear_tf=True).fit_transform(countVect)
         similarity = cosine_similarity(countVect[-1], countVect)
 
         return similarity.flatten()
 
+    def searchDocument(self, input1):
+        documentList = [element[2] for element in self.data]
+        documentList.append(input1)
+
+        documentSimilarity = self.getSimilarity(documentList)
+
+        index = self.indexSort(documentSimilarity)
+        document = documentList[index[0]]
+
+        print("Document Found:", document, "Similarity Score:", max(documentSimilarity[:-1]))
 
     def searchQuestion(self, input1):
         questionList = [element[0] for element in self.data]
@@ -86,13 +98,15 @@ class chatbot():
         index = self.indexSort(similarityScores)
         questionFound = questionList[index[0]]
 
-        if max(similarityScores[:-1]) < 0.45:
-            if self.errorMsg(questionFound):
-                self.searchAnswer(questionFound, input1)
-            else:
-                print("Sorry I can't help you with this")
-        else:
-            self.searchAnswer(questionFound, input1)
+        print("Question Found:", questionFound, "SimilarityScores: ", max(similarityScores[:-1]))
+
+        # if max(similarityScores[:-1]) < 0.45:
+        #     if self.errorMsg(questionFound):
+        #         self.searchAnswer(questionFound, input1)
+        #     else:
+        #         print("Sorry I can't help you with this")
+        # else:
+        #     self.searchAnswer(questionFound, input1)
             # return questionFound
     
 
@@ -128,7 +142,8 @@ class chatbot():
 
 
     def Talk(self, query):
-        talk = False
+        talk = True
+        proceed = True
         smallTalkList = [element for element in self.smallTalk.keys()]
         greetingList = self.greeting.copy()
         greetingList.append(query)
@@ -143,29 +158,30 @@ class chatbot():
         # print(greetingScores)
         # print(max(smallTalkScores[:-1]))
 
-        if max(greetingScores[:-1]) < 0.1 and max(smallTalkScores[:-1]) < 0.1:
+        if max(greetingScores[:-1]) < 0.3 and max(smallTalkScores[:-1]) < 0.4:
             talk = False
         elif max(greetingScores[:-1]) > max(smallTalkScores[:-1]):
             self.botGreeting()
             # print("greeted")
-            talk = True
+            
         else:
             smallTalkFound = smallTalkList[smallTalkIndex[0]]
             if max(smallTalkScores[:-1]) < 0.7:
                 if not self.errorMsg(smallTalkFound):
+                    print("return false ")
                     talk = False
-            elif smallTalkFound == "what is my name":
+                    proceed = False
+                
+                    
+            if (talk == True and proceed == True) and smallTalkFound == "what is my name":
                 # print("my name")
                 self.responseName(self.smallTalk["what is my name"][0])
-                talk = True
-            else:
+                
+            elif talk:
                 print(random.choice(self.smallTalk[smallTalkFound]))
-                talk = True
+                
 
-        if talk:
-            return True
-        else:
-            return False
+        return talk
 
     def errorMsg(self, alternative):
         print("I'm sorry, I don't understand your question.")
@@ -173,6 +189,7 @@ class chatbot():
         userInput = input()
 
         if userInput.lower() == 'y' or userInput.lower() == 'yes':
+            print("input yes")
             return True
         else:
             return False
@@ -190,11 +207,11 @@ class chatbot():
             print(usrInput)
             self.changeName(usrInput.split()[-1])
             talk = True
-
         elif self.Talk(usrInput):
             talk = True
 
         if talk == False:
+            self.searchDocument(usrInput)
             self.searchQuestion(usrInput)
 
     
@@ -202,22 +219,15 @@ class chatbot():
 
 
 if __name__ == "__main__":
-    print("in main function")
+    # print("Welcome")
     bot = chatbot()
     run  = True
-    # print(bot.searchQuestion("old"))
+
     while run: 
-        print("in while")
-        # bot.getName()
+        print("What can I help you with?")
         userInput = input()
         if userInput.lower() == "quit":
             run = False
             print("Good Bye")
         else:
             bot.userIntent(userInput)
-
-
-        # print(f"you typed {userInput}")
-
-    # bot.changeName("Alex")
-    
