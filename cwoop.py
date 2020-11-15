@@ -73,7 +73,8 @@ class chatbot():
     def botGreeting(self):
         print(f"Bot: {random.choice(self.greeting).capitalize()}, {self.username[0].capitalize()}. Nice to meet you!")
                 
-
+    def lemmatize(self, doc)
+        pass
     def getSimilarity(self, list1, stop=False):
         if stop:
             countVect = CountVectorizer(stop_words=stopwords.words('english')).fit_transform(list1)
