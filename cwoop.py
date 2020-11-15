@@ -34,7 +34,6 @@ class chatbot():
                 "how old are you":["10 days old", " 10 days young!", "I have only been created for 10 days"],
                 "how is the weather": ["It is raining cats and dogs!", "It is now 15'C", "The weather is warm and cozy"],
                 "what is your gender" :["I don't have a specific gender", "I am a BOT!"],
-                "what can you do" :["I can answer your question", "Try me!"],
                 "what is my name" :["your name is" ]
                 }
 
@@ -75,8 +74,8 @@ class chatbot():
         print(f"Bot: {random.choice(self.greeting).capitalize()}, {self.username[0].capitalize()}. Nice to meet you!")
                 
 
-    def getSimilarity(self, list1, doc=False):
-        if doc:
+    def getSimilarity(self, list1, stop=False):
+        if stop:
             countVect = CountVectorizer(stop_words=stopwords.words('english')).fit_transform(list1)
         else:
             countVect = CountVectorizer().fit_transform(list1)
@@ -89,7 +88,7 @@ class chatbot():
         docList = self.document.copy()
         # print("num:",docList.count(input1))
         docList.append(input1)
-        docSimilarity = self.getSimilarity(docList, doc=True)
+        docSimilarity = self.getSimilarity(docList, stop=True)
         print("max" ,max(docSimilarity[:-1]))
         # print("max:", max(docSimilarity[:-1]))
         # for i in docSimilarity:
@@ -155,11 +154,11 @@ class chatbot():
             return False
         elif max(similarityScores[:-1]) < 0.5:
             if self.errorMsg(questionFound):
-                self.searchAnswer(questionFound, input1)
+                self.searchAnswer(input1, questionFound)
             else:
                 self.response("Sorry I can't help you with this")
         else:
-            self.searchAnswer( input1,questionFound)
+            self.searchAnswer(input1,questionFound)
             return questionFound
     
 
@@ -173,7 +172,7 @@ class chatbot():
         # print(ansList)
         ansList.append(input1)
         
-        similarityScores = self.getSimilarity(ansList, doc=True)
+        similarityScores = self.getSimilarity(ansList, stop=True)
         print("Ans:" ,similarityScores)
         index = self.indexSort(similarityScores[:-1])
         # index = index[1:]
@@ -216,7 +215,7 @@ class chatbot():
         # print(smallTalkList)
 
         smallTalkScores = self.getSimilarity(smallTalkList)
-        smallTalkIndex = self.indexSort(smallTalkScores)
+        smallTalkIndex = self.indexSort(smallTalkScores[:-1])
 
         greetingScores = self.getSimilarity(greetingList)
         # print(greetingScores)
@@ -226,12 +225,11 @@ class chatbot():
             talk = False
         elif max(greetingScores[:-1]) > max(smallTalkScores[:-1]):
             self.botGreeting()
-            # print("greeted")
-            
+            # print("greeted 
         else:
             smallTalkFound = smallTalkList[smallTalkIndex[0]]
-            print(max(smallTalkScores[:-1]))
-            if max(smallTalkScores[:-1]) < 0.6:
+            print("Talk:",max(smallTalkScores[:-1]))
+            if max(smallTalkScores[:-1]) < 0.65:
                 if not self.errorMsg(smallTalkFound):
                     # print("return false ")
                     talk = False
@@ -276,7 +274,7 @@ class chatbot():
         elif self.Talk(usrInput):
             talk = True
 
-        if talk == False:
+        if talk == False :
             # self.searchDocument(usrInput)
             # self.searchQuestion(usrInput)
             self.startingSearch(usrInput)
