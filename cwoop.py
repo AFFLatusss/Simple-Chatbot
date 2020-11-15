@@ -17,7 +17,6 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from math import log10
-# nltk.download('wordnet')
 
 
 
@@ -27,13 +26,16 @@ class chatbot():
     greeting = ["hello", "hi", "hey", "hola", "g'day"]
     change = ["call me ", "change my name to ", "set my name to "] 
     data = []
-    smallTalk = {   
+    question = []
+    document = []
+    smallTalk = {
+                "who are you": ["I am your favorite chatbot", "Some people call me Jarvis", "Your friendly neighbourhood chat bot"],   
                 "how are you":["I am fine, thank you." , "Excellent!", "Never been better"], 
                 "how old are you":["10 days old", " 10 days young!", "I have only been created for 10 days"],
                 "how is the weather": ["It is raining cats and dogs!", "It is now 15'C", "The weather is warm and cozy"],
                 "what is your gender" :["I don't have a specific gender", "I am a BOT!"],
                 "what can you do" :["I can answer your question", "Try me!"],
-                "what is my name" :["your name is " ]
+                "what is my name" :["your name is" ]
                 }
 
     def __init__(self):
@@ -48,7 +50,9 @@ class chatbot():
             for row in readCSV:
                 # print(row)
                 if row  and row[3] != 'Document':
-                    self.data.append([row[1].lower(), row[2], row[3]])
+                    self.data.append([row[1].lower(), row[2], row[3].lower()])
+                    self.question.append(row[1].lower())
+                    self.document.append(row[3].lower())
 
     def getName(self):
         userinput = str(input('What is your Name?')) 
@@ -61,68 +65,128 @@ class chatbot():
 
     def changeName(self, newName):
         self.username[0] = newName
-        print(f"I have change your name to {self.username[0].capitalize()}")
+        sentence = f"I have change your name to {self.username[0].capitalize()}"
+        bot.response(sentence)
 
     def responseName(self, sentence):
-        print(sentence.capitalize(), self.username[0])
+        print("Bot: ", sentence.capitalize(), self.username[0])
 
     def botGreeting(self):
-        print(f"{random.choice(self.greeting).capitalize()}, {self.username[0].capitalize()}. Nice to meet you!")
+        print(f"Bot: {random.choice(self.greeting).capitalize()}, {self.username[0].capitalize()}. Nice to meet you!")
                 
 
-    def getSimilarity(self, list1):
-        countVect = CountVectorizer().fit_transform(list1)
+    def getSimilarity(self, list1, doc=False):
+        if doc:
+            countVect = CountVectorizer(stop_words=stopwords.words('english')).fit_transform(list1)
+        else:
+            countVect = CountVectorizer().fit_transform(list1)
         countVect = TfidfTransformer(use_idf=True, sublinear_tf=True).fit_transform(countVect)
         similarity = cosine_similarity(countVect[-1], countVect)
 
         return similarity.flatten()
 
-    def searchDocument(self, input1):
-        documentList = [element[2] for element in self.data]
-        documentList.append(input1)
+    def startingSearch(self, input1):
+        docList = self.document.copy()
+        # print("num:",docList.count(input1))
+        docList.append(input1)
+        docSimilarity = self.getSimilarity(docList, doc=True)
+        print("max" ,max(docSimilarity[:-1]))
+        # print("max:", max(docSimilarity[:-1]))
+        # for i in docSimilarity:
+        #     print(i)
+        # print(docSimilarity)
+        docIndex = self.indexSort(docSimilarity[:-1])
+        # print("INdex: ", docIndex)
+        docFound = docList[docIndex[0]]
+        # print("Found", docFound)
 
-        documentSimilarity = self.getSimilarity(documentList)
 
-        index = self.indexSort(documentSimilarity)
-        document = documentList[index[0]]
+        qList = self.question.copy()
+        qList.append(input1)
+        qSimilarity = self.getSimilarity(qList)
+        # qIndex = self.indexSort(qSimilarity)
+        # qFound = qList[qIndex[0]]
 
-        print("Document Found:", document, "Similarity Score:", max(documentSimilarity[:-1]))
+        if max(docSimilarity[:-1]) < 0.3 and max(qSimilarity[:-1]) < 0.3:
+            self.response("Sorry, I am not able to answer this at the moment")
+            return False
+        elif max(docSimilarity[:-1]) > 0.5:
+            # print("Found", docFound)
+            
+            ansSim, ansFound = self.searchAnswer(input1, doc=docFound)
+            if ansSim > 0.25:
+                self.response(ansFound)
+            else:    
+                self.searchQuestion(input1, doc=docFound)
+        else:
+            self.searchQuestion(input1)
 
-    def searchQuestion(self, input1):
-        questionList = [element[0] for element in self.data]
+    # def searchDocument(self, input1):
+    #     documentList = self.document.copy()
+    #     # [element[2] for element in self.data]
+    #     documentList.append(input1)
+
+    #     documentSimilarity = self.getSimilarity(documentList)
+
+    #     index = self.indexSort(documentSimilarity)
+    #     document = documentList[index[0]]
+
+        # print("Document Found:", document, "Similarity Score:", max(documentSimilarity[:-1]))
+
+    def searchQuestion(self, input1, doc=False):
+        if doc:
+            # print("Doc:", doc)
+            questionList =[element[0] for element in self.data if element[2] == doc]
+            print("form doc")
+        else:
+            questionList = self.question.copy()
+        # [element[0] for element in self.data]
+        # print("question List", questionList)
         questionList.append(input1)
-       
+        
         similarityScores = self.getSimilarity(questionList)
-        # print("Searching question:", max(similarityScores[:-1]))
+        index = self.indexSort(similarityScores[:-1])
 
-        index = self.indexSort(similarityScores)
         questionFound = questionList[index[0]]
-
-        print("Question Found:", questionFound, "SimilarityScores: ", max(similarityScores[:-1]))
-
-        # if max(similarityScores[:-1]) < 0.45:
-        #     if self.errorMsg(questionFound):
-        #         self.searchAnswer(questionFound, input1)
-        #     else:
-        #         print("Sorry I can't help you with this")
-        # else:
-        #     self.searchAnswer(questionFound, input1)
-            # return questionFound
+# 
+        print("SimilarityScores: ", max(similarityScores[:-1]))
+        if max(similarityScores[:-1]) < 0.35:
+            self.response("Sorry, I am not able to answer this at the moment")
+            return False
+        elif max(similarityScores[:-1]) < 0.5:
+            if self.errorMsg(questionFound):
+                self.searchAnswer(questionFound, input1)
+            else:
+                self.response("Sorry I can't help you with this")
+        else:
+            self.searchAnswer( input1,questionFound)
+            return questionFound
     
 
-    def searchAnswer(self, question, input1):
-        ansList = [element[1] for element in self.data if element[0] == question]
+    def searchAnswer(self, input1, question=False, doc=False):
+        if question:
+            print("Qget:", question)
+            ansList = [element[1] for element in self.data if element[0] == question]
+        else:
+            ansList = [element[1] for element in self.data if element[2] == doc]
+
+        # print(ansList)
         ansList.append(input1)
         
-        similarityScores = self.getSimilarity(ansList)
-        # print(similarityScores)
-        index = self.indexSort(similarityScores)
+        similarityScores = self.getSimilarity(ansList, doc=True)
+        print("Ans:" ,similarityScores)
+        index = self.indexSort(similarityScores[:-1])
         # index = index[1:]
         ansFound = ansList[index[0]]
 
         # print(ansFound)
+        if doc:
+            return max(similarityScores[:-1]), ansFound
+        else:
+            bot.response(ansFound)
+
+        #print(ansFound)
         # self.response(ansFound)
-        print(ansFound)
 
 
     def indexSort(self, array):
@@ -136,8 +200,8 @@ class chatbot():
                     temp = indexList[i]
                     indexList[i] = indexList[j]
                     indexList[j] = temp
-
-        return indexList[1:]
+        # print("Index list:",indexList)
+        return indexList
 
 
 
@@ -166,9 +230,10 @@ class chatbot():
             
         else:
             smallTalkFound = smallTalkList[smallTalkIndex[0]]
-            if max(smallTalkScores[:-1]) < 0.7:
+            print(max(smallTalkScores[:-1]))
+            if max(smallTalkScores[:-1]) < 0.6:
                 if not self.errorMsg(smallTalkFound):
-                    print("return false ")
+                    # print("return false ")
                     talk = False
                     proceed = False
                 
@@ -178,14 +243,15 @@ class chatbot():
                 self.responseName(self.smallTalk["what is my name"][0])
                 
             elif talk:
-                print(random.choice(self.smallTalk[smallTalkFound]))
+                bot.response(random.choice(self.smallTalk[smallTalkFound]))
                 
 
         return talk
 
     def errorMsg(self, alternative):
-        print("I'm sorry, I don't understand your question.")
-        print("Do you mean [" ,alternative, "?] (y/n)")
+        self.response("I'm sorry, I don't quite understand your question.")
+        self.response(f"Do you mean [{alternative}?] (y/n)")
+        print(f"{bot.username[0].capitalize()}: ",end =" ")
         userInput = input()
 
         if userInput.lower() == 'y' or userInput.lower() == 'yes':
@@ -204,30 +270,38 @@ class chatbot():
         similarity = self.getSimilarity(changename)
 
         if max(similarity[:-1]) > 0.5:
-            print(usrInput)
+            # print(usrInput)
             self.changeName(usrInput.split()[-1])
             talk = True
         elif self.Talk(usrInput):
             talk = True
 
         if talk == False:
-            self.searchDocument(usrInput)
-            self.searchQuestion(usrInput)
+            # self.searchDocument(usrInput)
+            # self.searchQuestion(usrInput)
+            self.startingSearch(usrInput)
+    
+    def response(self, output):
+        print("Bot: ",output)
 
     
-        
 
+    
+    
 
 if __name__ == "__main__":
     # print("Welcome")
     bot = chatbot()
     run  = True
-
+    bot.response("What can I help you with?")
     while run: 
-        print("What can I help you with?")
+        print(f"{bot.username[0].capitalize()}: ",end =" ")
         userInput = input()
+
         if userInput.lower() == "quit":
             run = False
             print("Good Bye")
         else:
             bot.userIntent(userInput)
+            
+        bot.response("What else can I help you with?")
