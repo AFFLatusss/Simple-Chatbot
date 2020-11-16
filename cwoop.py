@@ -40,7 +40,6 @@ class chatbot():
         with open('cw1Dataset.csv', encoding='utf8') as csvfile:
             readCSV = csv.reader(csvfile, delimiter=',')
             for row in readCSV:
-                # print(row)
                 if row  and row[3] != 'Document':
                     self.data.append([row[1].lower(), row[2], row[3].lower()])
                     self.question.append(row[1].lower())
@@ -86,13 +85,11 @@ class chatbot():
 
     def startingSearch(self, input1):
         docList = self.document.copy()
-        # print("num:",docList.count(input1))
         docList.append(input1)
         docSimilarity = self.getSimilarity(docList, stop=True)
         print("max" ,max(docSimilarity[:-1]))
 
         docIndex = self.indexSort(docSimilarity[:-1])
-        # print("INdex: ", docIndex)
         docFound = docList[docIndex[0]]
 
         qList = self.question.copy()
@@ -105,7 +102,6 @@ class chatbot():
             self.response("Sorry, I am not able to answer this at the moment")
             return False
         elif max(docSimilarity[:-1]) > 0.5:
-            # print("Found", docFound)
             
             ansSim, ansFound = self.searchAnswer(input1, doc=docFound)
             if ansSim > 0.25:
