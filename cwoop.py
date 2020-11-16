@@ -2,23 +2,16 @@ import random
 import numpy as np
 import scipy
 import csv
-import random 
 import nltk 
-
 # nltk.download('stopwords')
-
 from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-from nltk.tokenize import RegexpTokenizer
-from nltk.stem.wordnet import WordNetLemmatizer
-from nltk.stem.snowball import SnowballStemmer
+from nltk.stem.snowball import PorterStemmer
 from scipy import spatial
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from math import log10
-
-
+from termcolor import colored
 
 
 class chatbot():
@@ -71,15 +64,21 @@ class chatbot():
         print("Bot: ", sentence.capitalize(), self.username[0])
 
     def botGreeting(self):
-        print(f"Bot: {random.choice(self.greeting).capitalize()}, {self.username[0].capitalize()}. Nice to meet you!")
+        self.response(f"{random.choice(self.greeting).capitalize()}, {self.username[0].capitalize()}. Nice to meet you!")
                 
-    def lemmatize(self, doc)
-        pass
+    def stem(self, doc):
+        p_stemmer = PorterStemmer()
+
+        analyzer = CountVectorizer().build_analyzer()
+        return (p_stemmer.stem(w) for w in analyzer(doc))
+
     def getSimilarity(self, list1, stop=False):
+        
         if stop:
             countVect = CountVectorizer(stop_words=stopwords.words('english')).fit_transform(list1)
         else:
-            countVect = CountVectorizer().fit_transform(list1)
+            countVect = CountVectorizer(analyzer=self.stem).fit_transform(list1)
+
         countVect = TfidfTransformer(use_idf=True, sublinear_tf=True).fit_transform(countVect)
         similarity = cosine_similarity(countVect[-1], countVect)
 
@@ -91,15 +90,10 @@ class chatbot():
         docList.append(input1)
         docSimilarity = self.getSimilarity(docList, stop=True)
         print("max" ,max(docSimilarity[:-1]))
-        # print("max:", max(docSimilarity[:-1]))
-        # for i in docSimilarity:
-        #     print(i)
-        # print(docSimilarity)
+
         docIndex = self.indexSort(docSimilarity[:-1])
         # print("INdex: ", docIndex)
         docFound = docList[docIndex[0]]
-        # print("Found", docFound)
-
 
         qList = self.question.copy()
         qList.append(input1)
@@ -135,24 +129,23 @@ class chatbot():
 
     def searchQuestion(self, input1, doc=False):
         if doc:
-            # print("Doc:", doc)
             questionList =[element[0] for element in self.data if element[2] == doc]
             print("form doc")
         else:
             questionList = self.question.copy()
-        # [element[0] for element in self.data]
-        # print("question List", questionList)
+
         questionList.append(input1)
         
         similarityScores = self.getSimilarity(questionList)
         index = self.indexSort(similarityScores[:-1])
 
         questionFound = questionList[index[0]]
-# 
+
         print("SimilarityScores: ", max(similarityScores[:-1]))
         if max(similarityScores[:-1]) < 0.35:
             self.response("Sorry, I am not able to answer this at the moment")
             return False
+
         elif max(similarityScores[:-1]) < 0.5:
             if self.errorMsg(questionFound):
                 self.searchAnswer(input1, questionFound)
@@ -185,9 +178,6 @@ class chatbot():
         else:
             bot.response(ansFound)
 
-        #print(ansFound)
-        # self.response(ansFound)
-
 
     def indexSort(self, array):
         length = len(array)
@@ -200,7 +190,6 @@ class chatbot():
                     temp = indexList[i]
                     indexList[i] = indexList[j]
                     indexList[j] = temp
-        # print("Index list:",indexList)
         return indexList
 
 
@@ -211,36 +200,28 @@ class chatbot():
         smallTalkList = [element for element in self.smallTalk.keys()]
         greetingList = self.greeting.copy()
         greetingList.append(query)
-        # print(greetingList)
         smallTalkList.append(query)
-        # print(smallTalkList)
 
         smallTalkScores = self.getSimilarity(smallTalkList)
         smallTalkIndex = self.indexSort(smallTalkScores[:-1])
 
         greetingScores = self.getSimilarity(greetingList)
-        # print(greetingScores)
-        # print(max(smallTalkScores[:-1]))
+
 
         if max(greetingScores[:-1]) < 0.3 and max(smallTalkScores[:-1]) < 0.4:
             talk = False
         elif max(greetingScores[:-1]) > max(smallTalkScores[:-1]):
             self.botGreeting()
-            # print("greeted 
         else:
             smallTalkFound = smallTalkList[smallTalkIndex[0]]
             print("Talk:",max(smallTalkScores[:-1]))
             if max(smallTalkScores[:-1]) < 0.65:
                 if not self.errorMsg(smallTalkFound):
-                    # print("return false ")
                     talk = False
                     proceed = False
                 
-                    
             if (talk == True and proceed == True) and smallTalkFound == "what is my name":
-                # print("my name")
                 self.responseName(self.smallTalk["what is my name"][0])
-                
             elif talk:
                 bot.response(random.choice(self.smallTalk[smallTalkFound]))
                 
@@ -250,7 +231,7 @@ class chatbot():
     def errorMsg(self, alternative):
         self.response("I'm sorry, I don't quite understand your question.")
         self.response(f"Do you mean [{alternative}?] (y/n)")
-        print(f"{bot.username[0].capitalize()}: ",end =" ")
+        print(f"{bot.username[0].capitalize()}: ",end ="")
         userInput = input()
 
         if userInput.lower() == 'y' or userInput.lower() == 'yes':
@@ -281,7 +262,11 @@ class chatbot():
             self.startingSearch(usrInput)
     
     def response(self, output):
-        print("Bot: ",output)
+        # print("Bot: ",output)
+        print(colored("Bot: ",'red'), end="")
+
+        print(output)
+
 
     
 
@@ -289,12 +274,15 @@ class chatbot():
     
 
 if __name__ == "__main__":
-    # print("Welcome")
     bot = chatbot()
     run  = True
     bot.response("What can I help you with?")
+    print(colored(f"{bot.username[0]}:", 'blue'), end="")
+    a = input()
     while run: 
-        print(f"{bot.username[0].capitalize()}: ",end =" ")
+        # print(colored(f"{bot.username[0].capitalize()}:", 'blue'), end="")
+        print(f"{bot.username[0].capitalize()}:",end="")
+
         userInput = input()
 
         if userInput.lower() == "quit":
