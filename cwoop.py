@@ -76,8 +76,8 @@ class chatbot():
         if stop:
             countVect = CountVectorizer(stop_words=stopwords.words('english')).fit_transform(list1)
         else:
-            countVect = CountVectorizer(analyzer=self.stem).fit_transform(list1)
-
+            countVect = CountVectorizer().fit_transform(list1)
+# analyzer=self.stem
         countVect = TfidfTransformer(use_idf=True, sublinear_tf=True).fit_transform(countVect)
         similarity = cosine_similarity(countVect[-1], countVect)
 
@@ -147,6 +147,8 @@ class chatbot():
                 self.searchAnswer(input1, questionFound)
             else:
                 self.response("Sorry I can't help you with this")
+                #newly added
+                return False
         else:
             self.searchAnswer(input1,questionFound)
             return questionFound
@@ -204,7 +206,7 @@ class chatbot():
         greetingScores = self.getSimilarity(greetingList)
 
 
-        if max(greetingScores[:-1]) < 0.3 and max(smallTalkScores[:-1]) < 0.4:
+        if max(greetingScores[:-1]) < 0.4 and max(smallTalkScores[:-1]) < 0.4:
             talk = False
         elif max(greetingScores[:-1]) > max(smallTalkScores[:-1]):
             self.botGreeting()
@@ -273,8 +275,8 @@ if __name__ == "__main__":
     bot = chatbot()
     run  = True
     bot.response("What can I help you with?")
-    print(colored(f"{bot.username[0]}:", 'blue'), end="")
-    a = input()
+    # print(colored(f"{bot.username[0]}:", 'blue'), end="")
+    # a = input()
     while run: 
         # print(colored(f"{bot.username[0].capitalize()}:", 'blue'), end="")
         print(f"{bot.username[0].capitalize()}:",end="")
