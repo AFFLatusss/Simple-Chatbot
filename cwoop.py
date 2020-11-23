@@ -18,9 +18,6 @@ class chatbot():
     username = ["Name"]
     greeting = ["hello", "hi", "hey", "hola", "g'day"]
     change = ["call me ", "change my name to ", "set my name to "] 
-    data = []
-    question = []
-    document = []
     smallTalk = {
                 "who are you": ["I am your favorite chatbot", "Some people call me Jarvis", "Your friendly neighbourhood chat bot"],   
                 "how are you":["I am fine, thank you." , "Excellent!", "Never been better"], 
@@ -29,9 +26,12 @@ class chatbot():
                 "what is your gender" :["I don't have a specific gender", "I am a BOT!"],
                 "what is my name" :["your name is" ]
                 }
+    data = []
+    question = []
+    document = []
 
     def __init__(self):
-        print("Hello! Welcome!")
+        self.response("Hello! Welcome!" )
         self.getData()
         self.getName()
         
@@ -46,7 +46,9 @@ class chatbot():
                     self.document.append(row[3].lower())
 
     def getName(self):
-        userinput = str(input('What is your Name?')) 
+        print(colored("Bot: ",'red'), end="")
+
+        userinput = str(input('What is your Name?') )
     
         while userinput == "" or userinput == None:
             userinput = str(input('What is your Name?')) 
@@ -64,7 +66,8 @@ class chatbot():
 
     def botGreeting(self):
         self.response(f"{random.choice(self.greeting).capitalize()}, {self.username[0].capitalize()}. Nice to meet you!")
-                
+        
+
     def stem(self, doc):
         p_stemmer = PorterStemmer()
 
@@ -76,8 +79,8 @@ class chatbot():
         if stop:
             countVect = CountVectorizer(stop_words=stopwords.words('english')).fit_transform(list1)
         else:
-            countVect = CountVectorizer().fit_transform(list1)
-# analyzer=self.stem
+            countVect = CountVectorizer().fit_transform(list1 )
+
         countVect = TfidfTransformer(use_idf=True, sublinear_tf=True).fit_transform(countVect)
         similarity = cosine_similarity(countVect[-1], countVect)
 
@@ -87,7 +90,7 @@ class chatbot():
         docList = self.document.copy()
         docList.append(input1)
         docSimilarity = self.getSimilarity(docList, stop=True)
-        print("max" ,max(docSimilarity[:-1]))
+        # print("max" ,max(docSimilarity[:-1]))
 
         docIndex = self.indexSort(docSimilarity[:-1])
         docFound = docList[docIndex[0]]
@@ -137,7 +140,7 @@ class chatbot():
 
         questionFound = questionList[index[0]]
 
-        print("SimilarityScores: ", max(similarityScores[:-1]))
+        # print("SimilarityScores: ", max(similarityScores[:-1]))
         if max(similarityScores[:-1]) < 0.35:
             self.response("Sorry, I am not able to answer this at the moment")
             return False
@@ -165,7 +168,7 @@ class chatbot():
         ansList.append(input1)
         
         similarityScores = self.getSimilarity(ansList, stop=True)
-        print("Ans:" ,similarityScores)
+        # print("Ans:" ,similarityScores)
         index = self.indexSort(similarityScores[:-1])
         # index = index[1:]
         ansFound = ansList[index[0]]
@@ -212,7 +215,7 @@ class chatbot():
             self.botGreeting()
         else:
             smallTalkFound = smallTalkList[smallTalkIndex[0]]
-            print("Talk:",max(smallTalkScores[:-1]))
+            # print("Talk:",max(smallTalkScores[:-1]))
             if max(smallTalkScores[:-1]) < 0.65:
                 if not self.errorMsg(smallTalkFound):
                     talk = False
@@ -248,17 +251,19 @@ class chatbot():
         similarity = self.getSimilarity(changename)
 
         if max(similarity[:-1]) > 0.5:
-            # print(usrInput)
+
             self.changeName(usrInput.split()[-1])
             talk = True
         elif self.Talk(usrInput):
             talk = True
 
         if talk == False :
-            # self.searchDocument(usrInput)
-            # self.searchQuestion(usrInput)
             self.startingSearch(usrInput)
-    
+
+
+
+    # self.searchDocument(usrInput)
+    # self.searchQuestion(usrInput)
     def response(self, output):
         # print("Bot: ",output)
         print(colored("Bot: ",'red'), end="")
