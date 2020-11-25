@@ -63,18 +63,17 @@ class chatbot():
 
     def responseName(self, sentence):
         response = sentence.capitalize() + self.username[0]
-        # print("Bot: ", sentence.capitalize(), self.username[0])
         self.response(response)
 
     def botGreeting(self):
         self.response(f"{random.choice(self.greeting).capitalize()}, {self.username[0].capitalize()}. Nice to meet you!")
         
 
-    def stem(self, doc):
-        p_stemmer = PorterStemmer()
+    # def stem(self, doc):
+    #     p_stemmer = PorterStemmer()
 
-        analyzer = CountVectorizer().build_analyzer()
-        return (p_stemmer.stem(w) for w in analyzer(doc))
+    #     analyzer = CountVectorizer().build_analyzer()
+    #     return (p_stemmer.stem(w) for w in analyzer(doc))
 
     def getSimilarity(self, list1, stop=False):
         
@@ -92,7 +91,6 @@ class chatbot():
         docList = self.document.copy()
         docList.append(input1)
         docSimilarity = self.getSimilarity(docList, stop=True)
-        # print("max" ,max(docSimilarity[:-1]))
 
         docIndex = self.indexSort(docSimilarity[:-1])
         docFound = docList[docIndex[0]]
@@ -100,8 +98,6 @@ class chatbot():
         qList = self.question.copy()
         qList.append(input1)
         qSimilarity = self.getSimilarity(qList)
-        # qIndex = self.indexSort(qSimilarity)
-        # qFound = qList[qIndex[0]]
 
         if max(docSimilarity[:-1]) < 0.3 and max(qSimilarity[:-1]) < 0.3:
             self.response("Sorry, I am not able to answer this at the moment")
@@ -116,22 +112,10 @@ class chatbot():
         else:
             self.searchQuestion(input1)
 
-    # def searchDocument(self, input1):
-    #     documentList = self.document.copy()
-    #     # [element[2] for element in self.data]
-    #     documentList.append(input1)
-
-    #     documentSimilarity = self.getSimilarity(documentList)
-
-    #     index = self.indexSort(documentSimilarity)
-    #     document = documentList[index[0]]
-
-        # print("Document Found:", document, "Similarity Score:", max(documentSimilarity[:-1]))
-
+    
     def searchQuestion(self, input1, doc=False):
         if doc:
             questionList =[element[0] for element in self.data if element[2] == doc]
-            # print("form doc")
         else:
             questionList = self.question.copy()
 
@@ -152,7 +136,6 @@ class chatbot():
                 self.searchAnswer(input1, questionFound)
             else:
                 self.response("Sorry I can't help you with this")
-                #newly added
                 return False
         else:
             self.searchAnswer(input1,questionFound)
@@ -161,21 +144,16 @@ class chatbot():
 
     def searchAnswer(self, input1, question=False, doc=False):
         if question:
-            # print("Qget:", question)
             ansList = [element[1] for element in self.data if element[0] == question]
         else:
             ansList = [element[1] for element in self.data if element[2] == doc]
 
-        # print(ansList)
         ansList.append(input1)
         
         similarityScores = self.getSimilarity(ansList, stop=True)
-        # print("Ans:" ,similarityScores)
         index = self.indexSort(similarityScores[:-1])
-        # index = index[1:]
         ansFound = ansList[index[0]]
 
-        # print(ansFound)
         if doc:
             return max(similarityScores[:-1]), ansFound
         else:
@@ -217,7 +195,6 @@ class chatbot():
             self.botGreeting()
         else:
             smallTalkFound = smallTalkList[smallTalkIndex[0]]
-            # print("Talk:",max(smallTalkScores[:-1]))
             if max(smallTalkScores[:-1]) < 0.65:
                 if not self.errorMsg(smallTalkFound):
                     talk = False
@@ -264,10 +241,7 @@ class chatbot():
 
 
 
-    # self.searchDocument(usrInput)
-    # self.searchQuestion(usrInput)
     def response(self, output):
-        # print("Bot: ",output)
         print(colored("Bot: ",'red'), end="")
 
         print(output)
