@@ -24,7 +24,7 @@ class chatbot():
                 "how old are you":["10 days old", " 10 days young!", "I have only been created for 10 days"],
                 "how is the weather": ["It is raining cats and dogs!", "It is now 15'C", "The weather is warm and cozy"],
                 "what is your gender" :["I don't have a specific gender", "I am a BOT!"],
-                "what is my name" :["your name is" ]
+                "what is my name" :["your name is " ]
                 }
     data = []
     question = []
@@ -62,7 +62,9 @@ class chatbot():
         bot.response(sentence)
 
     def responseName(self, sentence):
-        print("Bot: ", sentence.capitalize(), self.username[0])
+        response = sentence.capitalize() + self.username[0]
+        # print("Bot: ", sentence.capitalize(), self.username[0])
+        self.response(response)
 
     def botGreeting(self):
         self.response(f"{random.choice(self.greeting).capitalize()}, {self.username[0].capitalize()}. Nice to meet you!")
@@ -129,7 +131,7 @@ class chatbot():
     def searchQuestion(self, input1, doc=False):
         if doc:
             questionList =[element[0] for element in self.data if element[2] == doc]
-            print("form doc")
+            # print("form doc")
         else:
             questionList = self.question.copy()
 
@@ -159,7 +161,7 @@ class chatbot():
 
     def searchAnswer(self, input1, question=False, doc=False):
         if question:
-            print("Qget:", question)
+            # print("Qget:", question)
             ansList = [element[1] for element in self.data if element[0] == question]
         else:
             ansList = [element[1] for element in self.data if element[2] == doc]
@@ -273,10 +275,21 @@ class chatbot():
 
     
 
+def checkPunc(input):
+    cop = input
+    for ele in cop:  
+        if ele in punc:  
+            cop = cop.replace(ele, "") 
     
+    if cop.isalnum() and cop.isascii():
+        return True
+    else:
+        bot.response("Sorry, I can only understand english")
+        return False
     
 
 if __name__ == "__main__":
+    punc = '''!()-[]{};:'"\, <>./?？@#$%^&*_~'''
     bot = chatbot()
     run  = True
     bot.response("What can I help you with?")
@@ -285,8 +298,11 @@ if __name__ == "__main__":
     while run: 
         # print(colored(f"{bot.username[0].capitalize()}:", 'blue'), end="")
         print(f"{bot.username[0].capitalize()}:",end="")
-
         userInput = input()
+
+        while not checkPunc(userInput):
+            print(f"{bot.username[0].capitalize()}:",end="")
+            userInput = input()
 
         if userInput.lower() == "quit":
             run = False
