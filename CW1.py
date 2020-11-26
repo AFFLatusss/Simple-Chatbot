@@ -215,7 +215,6 @@ class chatbot():
         userInput = input()
 
         if userInput.lower() == 'y' or userInput.lower() == 'yes':
-            print("input yes")
             return True
         else:
             return False
@@ -280,8 +279,8 @@ if __name__ == "__main__":
 
         if userInput.lower() == "quit":
             run = False
-            print("Good Bye")
+            bot.response("Good Bye")
         else:
             bot.userIntent(userInput)
             
-        bot.response("What else can I help you with?")
+            bot.response("What else can I help you with?")
